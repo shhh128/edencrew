@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'theme/theme.dart';
 
+import 'screens/watchlist_screen.dart';
+
 void main() {
   runApp(const EdencrewAssignmentApp());
 }
@@ -13,8 +15,9 @@ class EdencrewAssignmentApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '이든크루 평가 과제',
+      debugShowCheckedModeBanner: false, // 디버그 표시 삭제
       theme: AppTheme.dark,
-      home: const StartHereScreen(),
+      home: const WatchlistScreen(),
     );
   }
 }
