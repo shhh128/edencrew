@@ -31,16 +31,19 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             _buildSearchBar(context),
             Expanded(
-              child: _searchController.text.trim().isEmpty // trim 띄어쓰기 빈 검색어로 판단
-              ? _buildSearchEmpty(context)
-              : _buildSearchResultEmpty(context)
-            )
+              child:
+                  _searchController.text
+                      .trim()
+                      .isEmpty // trim 띄어쓰기 빈 검색어로 판단
+                  ? _buildSearchEmpty(context)
+                  : _buildSearchResultEmpty(context),
+            ),
           ],
-        )
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: _buildBottomNavigation(context)
+        child: _buildBottomNavigation(context),
       ),
     );
   }
@@ -54,29 +57,18 @@ class _SearchScreenState extends State<SearchScreen> {
           top: context.dimens.space2,
           right: context.dimens.space4,
           bottom: context.dimens.space3,
-          left: context.dimens.space4
+          left: context.dimens.space4,
         ),
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: context.dimens.space3
-          ),
+          padding: EdgeInsets.symmetric(horizontal: context.dimens.space3),
           decoration: BoxDecoration(
             color: context.colors.surfaceSunken,
-            borderRadius: BorderRadius.circular(
-              context.dimens.radiusMd
-            ),
-            border: Border.all(
-              color: context.colors.borderStrong,
-              width: 1
-            )
+            borderRadius: BorderRadius.circular(context.dimens.radiusMd),
+            border: Border.all(color: context.colors.borderStrong, width: 1),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.search,
-                color: context.colors.textTertiary,
-                size: 16,
-              ),
+              Icon(Icons.search, color: context.colors.textTertiary, size: 16),
               SizedBox(width: context.dimens.space2),
               Expanded(
                 child: TextField(
@@ -89,7 +81,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     fontSize: 15,
                     fontWeight: AppTypography.medium,
                     height: 20 / 15,
-                    letterSpacing: -0.1
+                    letterSpacing: -0.1,
                   ),
                   decoration: InputDecoration(
                     isDense: true,
@@ -100,11 +92,11 @@ class _SearchScreenState extends State<SearchScreen> {
                       fontSize: 15,
                       fontWeight: AppTypography.medium,
                       height: 20 / 15,
-                      letterSpacing: -0.1
+                      letterSpacing: -0.1,
                     ),
-                    contentPadding: EdgeInsets.zero
-                  )
-                )
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ),
               SizedBox(width: context.dimens.space2),
               InkWell(
@@ -116,8 +108,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icons.close,
                   color: context.colors.textTertiary,
                   size: 16,
-                )
-              )
+                ),
+              ),
             ],
           ),
         ),
@@ -131,12 +123,8 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.search,
-            color: context.colors.textTertiary,
-            size: 40,
-          ),
-          SizedBox(height: context.dimens.space3,),
+          Icon(Icons.search, color: context.colors.textTertiary, size: 40),
+          SizedBox(height: context.dimens.space3),
           Text(
             '종목을 검색해 보세요',
             style: TextStyle(
@@ -144,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
               fontSize: 19,
               fontWeight: AppTypography.bold,
               height: 22 / 19,
-              letterSpacing: -0.2
+              letterSpacing: -0.2,
             ),
           ),
           SizedBox(height: context.dimens.space3),
@@ -156,9 +144,9 @@ class _SearchScreenState extends State<SearchScreen> {
               fontSize: 11,
               fontWeight: AppTypography.regular,
               height: 14 / 11,
-              letterSpacing: 0
+              letterSpacing: 0,
             ),
-          )
+          ),
         ],
       ),
     );
@@ -169,9 +157,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Center(
       child: Text(
         '검색 결과 영역',
-        style: TextStyle(
-          color: context.colors.textSecondary
-        ),
+        style: TextStyle(color: context.colors.textSecondary),
       ),
     );
   }
@@ -183,15 +169,10 @@ class _SearchScreenState extends State<SearchScreen> {
       decoration: BoxDecoration(
         color: context.colors.surfaceRaised,
         border: Border(
-          top: BorderSide(
-            color: context.colors.borderSubtle,
-            width: 1
-          )
-        )
+          top: BorderSide(color: context.colors.borderSubtle, width: 1),
+        ),
       ),
-      padding: EdgeInsets.symmetric(
-        vertical: context.dimens.space2
-      ),
+      padding: EdgeInsets.symmetric(vertical: context.dimens.space2),
       child: Row(
         children: [
           Expanded(
@@ -214,7 +195,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       color: context.colors.navInactive,
                       fontSize: 11,
                       fontWeight: AppTypography.regular,
-                      height: 14 / 11
+                      height: 14 / 11,
                     ),
                   ),
                 ],
@@ -229,11 +210,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.search,
-                    color: context.colors.navActive,
-                    size: 22,
-                  ),
+                  Icon(Icons.search, color: context.colors.navActive, size: 22),
                   const SizedBox(height: 3),
                   Text(
                     '검색',
@@ -241,13 +218,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       color: context.colors.navActive,
                       fontSize: 11,
                       fontWeight: AppTypography.regular,
-                      height: 14 / 11
+                      height: 14 / 11,
                     ),
                   ),
-                ]
-              )
-            )
-          )
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
