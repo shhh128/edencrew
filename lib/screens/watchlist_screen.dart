@@ -3,9 +3,16 @@ import 'package:flutter/material.dart';
 import '../theme/theme.dart';
 
 import 'search_screen.dart';
+import '../stores/favorite_store.dart';
 
 class WatchlistScreen extends StatelessWidget {
-  const WatchlistScreen({super.key});
+  // main.dart의 저장소 전달받음
+  const WatchlistScreen({
+    super.key,
+    required this.favoriteStore
+  });
+
+  final FavoriteStore favoriteStore;
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +200,9 @@ class WatchlistScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SearchScreen()),
+                  MaterialPageRoute(builder: (context) => SearchScreen(
+                    favoriteStore: favoriteStore // 검색 화면으로 다시 전달
+                  )),
                 );
               },
               child: Column(

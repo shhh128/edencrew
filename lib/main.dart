@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'theme/theme.dart';
 
 import 'screens/watchlist_screen.dart';
+import 'stores/favorite_store.dart';
 
 void main() {
   runApp(const EdencrewAssignmentApp());
@@ -17,7 +18,9 @@ class EdencrewAssignmentApp extends StatelessWidget {
       title: '이든크루 평가 과제',
       debugShowCheckedModeBanner: false, // 디버그 표시 삭제
       theme: AppTheme.dark,
-      home: const WatchlistScreen(),
+      home: WatchlistScreen(
+        favoriteStore: FavoriteStore() // 저장소 만들기
+      ),
     );
   }
 }

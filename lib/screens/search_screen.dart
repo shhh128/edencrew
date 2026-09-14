@@ -4,10 +4,16 @@ import '../theme/theme.dart';
 
 import '../models/stock_search_result.dart'; // 검색 결과 데이터 저장
 import '../services/stock_search_service.dart'; // 네이버 API 호출
+import '../stores/favorite_store.dart';
 
 // 화면 내용 계속 바뀌어야 해서 StatefulWidget
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({
+    super.key,
+    required this.favoriteStore
+  });
+
+  final FavoriteStore favoriteStore;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -20,8 +26,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final StockSearchService _searchService = StockSearchService(); // API 요청 담당
 
   List<StockSearchResult> _searchResults = []; // 검색 결과 목록 저장
-
-  final Set<String> _favoriteStockIds = <String>{}; // 관심 종목 선택한 주식 id 중복 없이 저장
 
   bool _isLoading = false; // API 응답 기다리는 중인지 저장
   String? _errorMessage; // 요청 실패 메시지 저장
@@ -255,7 +259,7 @@ class _SearchScreenState extends State<SearchScreen> {
       itemBuilder: (context, index) {
         final StockSearchResult stock = _searchResults[index];
 
-        final bool isFavorite = _favoriteStockIds.contains(stock.id); // 현재 관심 종목인지 확인
+        final bool isFavorite = widget.favoriteStore.isFavorite(stock.code); // 현재 관심 종목인지 확인
 
         return InkWell(
           onTap: () {
@@ -301,13 +305,16 @@ class _SearchScreenState extends State<SearchScreen> {
                     SizedBox(width: context.dimens.space3),
                     InkWell(
                       onTap: () {
-                        setState(() {
-                          if (isFavorite) {
-                            _favoriteStockIds.remove(stock.id);
-                          } else {
-                            _favoriteStockIds.add(stock.id);
-                          }
-                        });
+                        //이번 클릭이 등록인지 해제인지 저장
+                        final bool isAdded= widget.favoriteStore.toggleFavorite(stock);
+                        
+                        // 별 상태 변경
+                        setState(() {});
+
+                        _showFavoriteToast(
+                          context,
+                          isAdded: isAdded
+                        );
                       },
                       child: Icon(
                         isFavorite ? Icons.star : Icons.star_border,
@@ -384,6 +391,77 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  //
+  void _showFavoriteToast(
+    BuildContext context, {
+      required bool isAdded
+  }) {
+    final ScaffoldMessengerState messenger = 
+        ScaffoldMessenger.of(context);
+
+    // 연속으로 눌렀을 때 이전 토스트 제거
+    messenger.hideCurrentSnackBar() ;
+
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        backgroundColor: context.colors.surfaceOverlay,
+        margin: EdgeInsets.only(
+          left: context.dimens.space4,
+          right: context.dimens.space4,
+          bottom: context.dimens.space2
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: context.dimens.space4,
+          vertical: 14
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            context.dimens.radiusLg
+          ),
+          side: BorderSide(
+            color: context.colors.borderSubtle,
+            width: 1
+          )
+        ),
+        content: SizedBox(
+          height: 18,
+          child: Row(
+            children: [
+              Icon(
+                isAdded
+                    ? Icons.star
+                    : Icons.star_border,
+                color: isAdded
+                    ? context.colors.favoriteActive
+                    : context.colors.favoriteInactive,
+                size: 18,
+              ),
+              SizedBox(width: context.dimens.space2),
+              Expanded(
+                child: Text(
+                  isAdded
+                      ? '관심이 등록되었습니다'
+                      : '관심이 해제되었습니다',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: context.colors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: AppTypography.bold,
+                    height: 18 / 13,
+                    letterSpacing: 0
+                  ),
+                )
+              )
+            ],
+          ),
+        )
+      )
     );
   }
 
