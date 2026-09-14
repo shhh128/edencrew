@@ -47,7 +47,7 @@ class StockSearchDto {
   // 국내 주식인지 검사
   bool get isDomesticStock {
     return nationCode == 'KOR' && // 대한민국
-        typeCode == 'stock' && // 주식
+        category == 'stock' && // 주식
         RegExp(r'^\d{6}$').hasMatch(code); // 6자리
   }
 
@@ -57,7 +57,7 @@ class StockSearchDto {
       id: 'domestic:$code',
       code: code,
       name: name,
-      market: category,
+      market: typeCode,
     );
   }
 }
