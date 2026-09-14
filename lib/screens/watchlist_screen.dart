@@ -6,6 +6,14 @@ import 'search_screen.dart';
 import '../stores/favorite_store.dart';
 import '../models/stock_quote.dart';
 import '../services/stock_quote_service.dart';
+import '../models/stock_search_result.dart';
+
+// 정렬 종류
+enum WatchlistSort {
+  currentPrice,
+  changeRate,
+  name
+}
 
 class WatchlistScreen extends StatefulWidget {
   // main.dart의 저장소 전달받음
@@ -25,6 +33,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   final StockQuoteService _quoteService = StockQuoteService();
 
   Map<String, StockQuote> _quotes = {}; // 받아온 종목별 시세 보관
+
+  // 현재 정렬 상태
+  WatchlistSort _currentSort = WatchlistSort.name;
 
   @override
   // 관심화면 처음 열릴 때 시세 조회
@@ -173,33 +184,39 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // 정렬
-                  Text(
-                    '가나다순',
-                    style: TextStyle(
-                      color: context.colors.textSecondary,
-                      fontSize: 13,
-                      fontWeight: AppTypography.bold,
-                      height: 18 / 13,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  SizedBox(
-                    width: context.dimens.iconMd,
-                    child: Transform.translate(
-                      offset: const Offset(0, 1),
-                      child: Icon(
-                        Icons.south_rounded,
-                        color: context.colors.textSecondary,
-                        size: 16,
-                      ),
+                  InkWell(
+                    onTap: _showSortBottomSheet,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _sortLabel,
+                          style: TextStyle(
+                            color: context.colors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: AppTypography.bold,
+                            height: 18 / 13,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                        SizedBox(
+                          width: context.dimens.iconMd,
+                          child: Transform.translate(
+                            offset: const Offset(0, 1),
+                            child: Icon(
+                              Icons.south_rounded,
+                              color: context.colors.textSecondary,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(width: context.dimens.space4),
                   // 새로고침
                   InkWell(
-                    onTap: () {
-                      _fetchQuotes();
-                    },
+                    onTap: _fetchQuotes,
                     child: Icon(
                       Icons.refresh_rounded,
                       color: context.colors.textSecondary,
@@ -254,7 +271,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
   // 관심 목록
   Widget _buildFavoriteList(BuildContext context) {
-    final favoriteStocks = widget.favoriteStore.favoriteStocks;
+    final List<StockSearchResult> favoriteStocks = [
+      ...widget.favoriteStore.favoriteStocks
+    ];
+
+    favoriteStocks.sort(_compareFavoriteStocks);
 
     return ListView.builder(
       padding: EdgeInsets.zero,
@@ -331,6 +352,166 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           ),
         );
       }
+    );
+  }
+
+  // 정렬
+  int _compareFavoriteStocks(
+    StockSearchResult a,
+    StockSearchResult b
+  ) {
+    if (_currentSort == WatchlistSort.name) {
+      return a.name.compareTo(b.name);
+    }
+
+    final StockQuote? quoteA = _quotes[a.code];
+    final StockQuote? quoteB = _quotes[b.code];
+
+    // 아직 시세 없는 종목은 아래 배치
+    if (quoteA == null && quoteB == null) {
+      return a.name.compareTo(b.name);
+    }
+
+    if (quoteA == null) {
+      return 1;
+    }
+
+    if (quoteB == null) {
+      return -1;
+    }
+
+    if (_currentSort == WatchlistSort.currentPrice) {
+      return quoteB.currentPrice.compareTo(
+        quoteA.currentPrice
+      );
+    }
+
+    return quoteB.changeRate.compareTo(
+      quoteA.changeRate
+    );
+  }
+
+  // 헤더 정렬 문구 변경
+  String get _sortLabel {
+    switch (_currentSort) {
+      case WatchlistSort.currentPrice:
+        return '현재가순';
+      case WatchlistSort.changeRate:
+        return '등락률순';
+      case WatchlistSort.name:
+        return '가나다순';
+    }
+  }
+
+  // 정렬 바텀시트
+  void _showSortBottomSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.colors.surfaceOverlay,
+      barrierColor: context.colors.surfaceBase.withValues(alpha: 0.72),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(16)
+        )
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 64,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.dimens.space6
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '정렬',
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
+                        fontSize: 19,
+                        fontWeight: AppTypography.bold,
+                        height: 22 / 19,
+                        letterSpacing: -0.2
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _buildSortOption(
+                sheetContext,
+                WatchlistSort.currentPrice,
+                '현재가순'
+              ),
+              _buildSortOption(
+                sheetContext,
+                WatchlistSort.changeRate,
+                '등락률순'
+              ),
+              _buildSortOption(
+                sheetContext,
+                WatchlistSort.name,
+                '가나다순'
+              ),
+            ],
+          )
+        );
+      }
+    );
+  }
+
+  // 정렬 옵션
+  Widget _buildSortOption(
+    BuildContext sheetContext,
+    WatchlistSort sort,
+    String label
+  ) {
+    final bool isSelected = _currentSort == sort;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _currentSort = sort;
+        });
+
+        Navigator.pop(sheetContext);
+      },
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.dimens.space6,
+            vertical: 10
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? context.colors.textPrimary
+                        : context.colors.textSecondary,
+                    fontSize: 15,
+                    fontWeight: AppTypography.medium,
+                    height: 20 / 15
+                  ),
+                )
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check,
+                  color: context.colors.textPrimary,
+                  size: context.dimens.iconMd,
+                )
+            ],
+          ),
+        ),
+      ),
     );
   }
 
