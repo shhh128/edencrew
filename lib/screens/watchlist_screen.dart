@@ -7,6 +7,7 @@ import '../stores/favorite_store.dart';
 import '../models/stock_quote.dart';
 import '../services/stock_quote_service.dart';
 import '../models/stock_search_result.dart';
+import 'stock_detail_screen.dart';
 
 // 정렬 종류
 enum WatchlistSort {
@@ -286,7 +287,16 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
         return InkWell(
           onTap: () {
-            // 종목 상세 화면으로 이동
+            // 같은 상세 화면으로 이동
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StockDetailScreen(
+                  stock: stock,
+                  favoriteStore: widget.favoriteStore,
+                ),
+              ),
+            );
           },
           child: SizedBox(
             height: 60,

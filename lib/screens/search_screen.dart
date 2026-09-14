@@ -5,6 +5,7 @@ import '../theme/theme.dart';
 import '../models/stock_search_result.dart'; // 검색 결과 데이터 저장
 import '../services/stock_search_service.dart'; // 네이버 API 호출
 import '../stores/favorite_store.dart';
+import 'stock_detail_screen.dart';
 
 // 화면 내용 계속 바뀌어야 해서 StatefulWidget
 class SearchScreen extends StatefulWidget {
@@ -262,8 +263,23 @@ class _SearchScreenState extends State<SearchScreen> {
         final bool isFavorite = widget.favoriteStore.isFavorite(stock.code); // 현재 관심 종목인지 확인
 
         return InkWell(
-          onTap: () {
-            // 종목 상세 화면으로 이동
+          onTap: () async {
+            // 선택 종목 정보 전달하며 상세 화면으로 이동
+            // 상세화면 닫힐 때까지 기다림
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StockDetailScreen(
+                  stock: stock,
+                  favoriteStore: widget.favoriteStore,
+                ),
+              ),
+            );
+
+            // 상세화면에서 변경한 별 상태 검색 결과에 즉시 반영
+            if (mounted) {
+              setState(() {});
+            }
           },
           child: SizedBox(
             height: 60,
