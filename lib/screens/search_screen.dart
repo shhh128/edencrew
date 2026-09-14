@@ -349,7 +349,7 @@ class _SearchScreenState extends State<SearchScreen> {
       letterSpacing: -0.1
     );
 
-    final int keywordIndex = stockName.indexOf(keyword);
+    final int keywordIndex = stockName.toLowerCase().indexOf(keyword.toLowerCase());
 
     // 검색어가 종목명에 포함되지 않은 경우
     if (keyword.isEmpty || keywordIndex == -1) {

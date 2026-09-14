@@ -4,8 +4,10 @@ import '../theme/theme.dart';
 
 import 'search_screen.dart';
 import '../stores/favorite_store.dart';
+import '../models/stock_quote.dart';
+import '../services/stock_quote_service.dart';
 
-class WatchlistScreen extends StatelessWidget {
+class WatchlistScreen extends StatefulWidget {
   // main.dart의 저장소 전달받음
   const WatchlistScreen({
     super.key,
@@ -13,6 +15,84 @@ class WatchlistScreen extends StatelessWidget {
   });
 
   final FavoriteStore favoriteStore;
+
+  @override
+  State<WatchlistScreen> createState() => _WatchlistScreenState();
+}
+
+class _WatchlistScreenState extends State<WatchlistScreen> {
+  // 시세 API 호출
+  final StockQuoteService _quoteService = StockQuoteService();
+
+  Map<String, StockQuote> _quotes = {}; // 받아온 종목별 시세 보관
+
+  @override
+  // 관심화면 처음 열릴 때 시세 조회
+  void initState() {
+    super.initState();
+
+    // 관심종목 바뀌었는지 감지
+    widget.favoriteStore.addListener(
+      _handleFavoriteChanged
+    );
+
+    // 화면 처음 만들어질 때 시세 조회
+    _fetchQuotes();
+  }
+
+  void _handleFavoriteChanged() {
+    _fetchQuotes();
+  }
+
+  Future<void> _fetchQuotes() async {
+    final List<String> stockCodes = widget
+        .favoriteStore
+        .favoriteStocks
+        .map((stock) => stock.code)
+        .toList();
+
+    if (stockCodes.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _quotes = {};
+      });
+
+      return;
+    }
+
+    // 새 시세 기다리는 동안 스켈레톤 표시
+    setState(() {
+      _quotes = {};
+    });
+
+    try {
+      final Map<String, StockQuote> quotes =
+          await _quoteService.fetchQuotes(stockCodes);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _quotes = quotes;
+      });
+    } catch (error) {
+      debugPrint('실시간 시세 오류: $error');
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.favoriteStore.removeListener(
+      _handleFavoriteChanged
+    );
+
+    // 화면 없어질 때 관심 상태 감지 연결 해제
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +115,20 @@ class WatchlistScreen extends StatelessWidget {
           children: [
             _buildHeader(context),
             // 헤더 제외 남은 공간 사용
-            Expanded(child: _buildEmpty(context)),
+            Expanded(
+              // 변경 감지해서 관심 화면 다시 그림
+              child: AnimatedBuilder(
+                animation: widget.favoriteStore, 
+                builder: (context, child) {
+                  if (widget.favoriteStore.favoriteStocks.isEmpty) {
+                    return _buildEmpty(context);
+                  }
+
+                  return _buildFavoriteList(context);
+                }
+              )
+
+            ),
           ],
         ),
       ),
@@ -105,7 +198,7 @@ class WatchlistScreen extends StatelessWidget {
                   // 새로고침
                   InkWell(
                     onTap: () {
-                      // 새로고침 기능 추가
+                      _fetchQuotes();
                     },
                     child: Icon(
                       Icons.refresh_rounded,
@@ -159,6 +252,173 @@ class WatchlistScreen extends StatelessWidget {
     );
   }
 
+  // 관심 목록
+  Widget _buildFavoriteList(BuildContext context) {
+    final favoriteStocks = widget.favoriteStore.favoriteStocks;
+
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: favoriteStocks.length,
+      itemBuilder: (context, index) {
+        final stock = favoriteStocks[index];
+        final StockQuote? quote = _quotes[stock.code];
+
+        return InkWell(
+          onTap: () {
+            // 종목 상세 화면으로 이동
+          },
+          child: SizedBox(
+            height: 60,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.colors.borderSubtle,
+                    width: 1
+                  )
+                )
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.dimens.space4,
+                  vertical: context.dimens.space3
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            stock.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: context.colors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: AppTypography.medium,
+                              height: 20 / 15,
+                              letterSpacing: -0.1
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${stock.code} · ${stock.market}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: context.colors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: AppTypography.regular,
+                              height: 14 / 11,
+                              letterSpacing: 0
+                            ),
+                          )
+                        ],
+                      )
+                    ),
+                    SizedBox(width: context.dimens.space3),
+
+                    // 시세 받지 못했을 시 스켈레톤 표시
+                    quote == null
+                        ? _buildQuoteSkeleton(context)
+                        : _buildQuote(context, quote)
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    );
+  }
+
+  // 실제 시세 위젯
+  Widget _buildQuote(
+    BuildContext context,
+    StockQuote quote
+  ) {
+    final bool isUp = quote.changeAmount > 0;
+    final bool isDown = quote.changeAmount < 0;
+
+    final Color changeColor = isUp
+        ? context.colors.priceUpText
+        : isDown
+            ? context.colors.priceDownText
+            :context.colors.priceFlatText;
+
+    final String sign = isUp ? '+' : '';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          _formatNumber(quote.currentPrice),
+          style: TextStyle(
+            color: context.colors.textPrimary,
+            fontSize: 15,
+            fontWeight: AppTypography.medium,
+            height: 20 / 15,
+            letterSpacing: -0.1
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '$sign${_formatNumber(quote.changeAmount)} '
+          '($sign${quote.changeRate.toStringAsFixed(2)}%)',
+          style: TextStyle(
+            color: changeColor,
+            fontSize: 11,
+            fontWeight: AppTypography.regular,
+            height: 14 / 11,
+            letterSpacing: 0
+          ),
+        )
+      ],
+    );
+  }
+
+  // 천 단위 쉼표 표시
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},'
+    );
+  }
+
+  // 시세 불러오기 전 스켈레톤
+  Widget _buildQuoteSkeleton(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Container(
+          width: 64,
+          height: 16,
+          decoration: BoxDecoration(
+            color: context.colors.feedbackSkeleton,
+            borderRadius: BorderRadius.circular(
+              context.dimens.radiusSm
+            )
+          ),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          width: 48,
+          height: 12,
+          decoration: BoxDecoration(
+            color: context.colors.feedbackSkeleton,
+            borderRadius: BorderRadius.circular(
+              context.dimens.radiusSm
+            )
+          ),
+        )
+      ],
+    );
+  }
+
   // 하단 관심·검색 탭
   Widget _buildBottomNavigation(BuildContext context) {
     return Container(
@@ -201,7 +461,7 @@ class WatchlistScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => SearchScreen(
-                    favoriteStore: favoriteStore // 검색 화면으로 다시 전달
+                    favoriteStore: widget.favoriteStore // 검색 화면으로 다시 전달
                   )),
                 );
               },
