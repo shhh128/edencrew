@@ -20,6 +20,9 @@ class _SearchScreenState extends State<SearchScreen> {
   final StockSearchService _searchService = StockSearchService(); // API 요청 담당
 
   List<StockSearchResult> _searchResults = []; // 검색 결과 목록 저장
+
+  final Set<String> _favoriteStockIds = <String>{}; // 관심 종목 선택한 주식 id 중복 없이 저장
+
   bool _isLoading = false; // API 응답 기다리는 중인지 저장
   String? _errorMessage; // 요청 실패 메시지 저장
 
@@ -252,6 +255,8 @@ class _SearchScreenState extends State<SearchScreen> {
       itemBuilder: (context, index) {
         final StockSearchResult stock = _searchResults[index];
 
+        final bool isFavorite = _favoriteStockIds.contains(stock.id); // 현재 관심 종목인지 확인
+
         return InkWell(
           onTap: () {
             // 종목 상세 화면으로 이동
@@ -294,10 +299,23 @@ class _SearchScreenState extends State<SearchScreen> {
                       )
                     ),
                     SizedBox(width: context.dimens.space3),
-                    Icon(
-                      Icons.star_border,
-                      color: context.colors.textTertiary,
-                      size: 22,
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (isFavorite) {
+                            _favoriteStockIds.remove(stock.id);
+                          } else {
+                            _favoriteStockIds.add(stock.id);
+                          }
+                        });
+                      },
+                      child: Icon(
+                        isFavorite ? Icons.star : Icons.star_border,
+                        color: isFavorite
+                            ? context.colors.favoriteActive
+                            : context.colors.favoriteInactive,
+                        size: 22,
+                      ),
                     )
                   ],
                 ),
@@ -352,7 +370,7 @@ class _SearchScreenState extends State<SearchScreen> {
               keywordIndex + keyword.length
             ),
             style:  TextStyle(
-              color: Theme.of(context).colorScheme.primary
+              color: context.colors.searchHighlight
             )
           ),
 
@@ -371,11 +389,45 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // 검색 결과 없을 시
   Widget _buildSearchResultEmpty(BuildContext context) {
+    final String keyword = _searchController.text.trim();
+
     return Center(
-      child: Text(
-        '검색 결과 영역',
-        style: TextStyle(color: context.colors.textSecondary),
-      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            color: context.colors.textTertiary,
+            size: 40,
+          ),
+          SizedBox(height: context.dimens.space3),
+          Text(
+            '검색 결과가 없습니다',
+            style: TextStyle(
+              color: context.colors.textSecondary,
+              fontSize: 19,
+              fontWeight: AppTypography.bold,
+              height: 22 / 19,
+              letterSpacing: -0.2
+            ),
+          ),
+          SizedBox(height: context.dimens.space3),
+          SizedBox(
+            width: 175,
+            child: Text(
+              "'$keyword'와\n일치하는 검색 결과를 찾지 못했습니다.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: context.colors.textTertiary,
+                fontSize: 11,
+                fontWeight: AppTypography.regular,
+                height: 14 / 11,
+                letterSpacing: 0
+              ),
+            ),
+          )
+        ],
+      )
     );
   }
 
